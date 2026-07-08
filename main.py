@@ -76,8 +76,22 @@ def create_title(title: schemas.TitleCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/titles", response_model=list[schemas.TitleRead])
-def read_titles(db: Session = Depends(get_db)):
-    titles = db.query(models.Title).all()
+def read_titles(
+    skip: int = 0,
+    limit: int = 20,
+    search: str | None = None,
+    media_type: str | None = None,
+    genre: str | None = None,
+    db: Session = Depends(get_db),
+):
+    query = db.query(models.Title)
+    if search is not None:
+        query = query.filter(models.Title.name.contains(search))
+    if media_type is not None:
+        query = query.filter(models.Title.media_type == media_type)
+    if genre is not None:
+        query = query.filter(models.Title.genres.any(models.Genre.name == genre))
+    titles = query.offset(skip).limit(limit).all()
     return titles
 
 
