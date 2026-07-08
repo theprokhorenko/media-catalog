@@ -73,3 +73,17 @@ def create_title(title: schemas.TitleCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_title)
     return new_title
+
+
+@app.get("/titles", response_model=list[schemas.TitleRead])
+def read_titles(db: Session = Depends(get_db)):
+    titles = db.query(models.Title).all()
+    return titles
+
+
+@app.get("/titles/{title_id}", response_model=schemas.TitleRead)
+def read_title(title_id: int, db: Session = Depends(get_db)):
+    title = db.query(models.Title).filter(models.Title.id == title_id).first()
+    if title is None:
+        raise HTTPException(status_code=404, detail="Тайтл не найден")
+    return title
