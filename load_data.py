@@ -30,6 +30,7 @@ for _, row in df.iterrows():
         name=row["title"],
         media_type=row["type"],
         country=row["country"] if pd.notna(row["country"]) else None,
+        director=row["director"] if pd.notna(row["director"]) else None,
         year=int(row["release_year"]) if pd.notna(row["release_year"]) else None,
         description=row["description"] if pd.notna(row["description"]) else None,
     )

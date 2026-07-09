@@ -64,6 +64,7 @@ def create_title(title: schemas.TitleCreate, db: Session = Depends(get_db)):
         media_type=title.media_type,
         year=title.year,
         country=title.country,
+        director=title.director,
         description=title.description,
         rating=title.rating,
     )
@@ -101,3 +102,26 @@ def read_title(title_id: int, db: Session = Depends(get_db)):
     if title is None:
         raise HTTPException(status_code=404, detail="Тайтл не найден")
     return title
+
+
+@app.get("/titles/{title_id}/recommendations", response_model=list[schemas.TitleRead])
+def recommendations(title_id: int, db: Session = Depends(get_db)):
+    title = db.query(models.Title).filter(models.Title.id == title_id).first()
+    if title is None:
+        raise HTTPException(status_code=404, detail="Тайтл не найден")
+
+    title_genres = set([g.name for g in title.genres])
+    title_director = title.director
+
+    other_titles = db.query(models.Title).filter(models.Title.id != title.id).all()
+    scored = []
+    for other in other_titles:
+        other_genres = set(g.name for g in other.genres)
+        score = len(title_genres & other_genres)
+        if title_director is not None and title_director == other.director:
+            score += 3
+        if score > 0:
+            scored.append((other, score))
+
+    scored = sorted(scored, key=lambda x: x[1], reverse=True)
+    return [t for t, score in scored[:5]]

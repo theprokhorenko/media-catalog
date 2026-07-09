@@ -25,6 +25,7 @@ class Title(Base):
     media_type = Column(String)
     year = Column(Integer)
     country = Column(String)
+    director = Column(String)
     description = Column(Text)
     rating = Column(Float)
     genres = relationship("Genre", secondary=title_genre, back_populates="titles")

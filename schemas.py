@@ -28,6 +28,7 @@ class TitleRead(BaseModel):
     media_type: str | None = None
     year: int | None = None
     country: str | None = None
+    director: str | None = None
     description: str | None = None
     rating: float | None = None
     genres: list[GenreRead] = []
