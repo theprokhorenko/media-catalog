@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Медиа-каталог</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, system-ui, sans-serif;
+            background: #14151a;
+            color: #e8e8ea;
+            padding: 32px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        h1 {
+            margin-bottom: 24px;
+            font-size: 32px;
+            background: linear-gradient(90deg, #5b6cff, #9d7bff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+        .controls { display: flex; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; }
+        input, select {
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid #2e2f38;
+            background: #1c1d24;
+            color: #e8e8ea;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus { outline: none; border-color: #5b6cff; }
+        input { flex: 1; min-width: 200px; }
+        button {
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            background: #5b6cff;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        button:hover { background: #4a5ae8; }
+        button:active { transform: scale(0.97); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+        .card {
+            background: #1c1d24;
+            border: 1px solid #2e2f38;
+            border-radius: 12px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: #5b6cff;
+            box-shadow: 0 8px 24px rgba(91, 108, 255, 0.15);
+        }
+        .card h3 { font-size: 16px; margin-bottom: 8px; }
+        .card .meta { font-size: 13px; color: #9a9ba4; margin-bottom: 10px; }
+        .card .director { font-size: 12px; color: #9a9ba4; margin-bottom: 10px; }
+        .card .description {
+            font-size: 13px;
+            color: #c4c5cd;
+            margin-bottom: 12px;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .genres { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+        .genre-tag {
+            font-size: 11px;
+            background: #2a2b35;
+            padding: 3px 8px;
+            border-radius: 20px;
+            color: #b8b9c4;
+        }
+        .card button {
+            font-size: 12px;
+            padding: 6px 14px;
+            background: #5b6cff;
+            margin-top: auto;
+            align-self: flex-start;
+        }
+        .card button:hover { background: #4a5ae8; }
+        .status { color: #9a9ba4; margin-bottom: 16px; min-height: 20px; }
+        .pagination { display: flex; gap: 12px; align-items: center; justify-content: center; margin-top: 28px; }
+        .pagination span { color: #9a9ba4; font-size: 14px; }
+        #back-btn { display: none; background: #2a2b35; }
+        #back-btn:hover { background: #363745; }
+    </style>
+</head>
+<body>
+    <h1>🎬 Медиа-каталог</h1>
+    <div class="controls">
+        <input type="text" id="search" placeholder="Поиск по названию...">
+        <select id="media_type">
+            <option value="">Все типы</option>
+            <option value="Movie">Фильмы</option>
+            <option value="TV Show">Сериалы</option>
+        </select>
+        <button onclick="search()">Найти</button>
+        <button id="back-btn" onclick="backToCatalog()">← Назад в каталог</button>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="grid" id="grid"></div>
+    <div class="pagination">
+        <button onclick="prevPage()">← Назад</button>
+        <span id="page-info"></span>
+        <button onclick="nextPage()">Вперёд →</button>
+    </div>
+
+    <script>
+        let currentPage = 0;
+        const PAGE_SIZE = 24;
+
+        async function loadTitles() {
+            const search = document.getElementById("search").value;
+            const mediaType = document.getElementById("media_type").value;
+
+            const skip = currentPage * PAGE_SIZE;
+            let url = `/titles?limit=${PAGE_SIZE}&skip=${skip}`;
+            if (search) url += "&search=" + encodeURIComponent(search);
+            if (mediaType) url += "&media_type=" + encodeURIComponent(mediaType);
+
+            const response = await fetch(url);
+            const titles = await response.json();
+            document.querySelector(".pagination").style.display = "flex";
+            document.getElementById("back-btn").style.display = "none";
+            renderTitles(titles);
+            document.getElementById("page-info").textContent = "Страница " + (currentPage + 1);
+        }
+
+        function search() {
+            currentPage = 0;
+            loadTitles();
+        }
+
+        function nextPage() {
+            currentPage++;
+            loadTitles();
+        }
+
+        function prevPage() {
+            if (currentPage > 0) {
+                currentPage--;
+                loadTitles();
+            }
+        }
+
+        async function loadRecommendations(titleId) {
+            const response = await fetch("/titles/" + titleId + "/recommendations");
+            const titles = await response.json();
+            document.getElementById("status").textContent = "Похожие тайтлы:";
+            document.querySelector(".pagination").style.display = "none";
+            document.getElementById("back-btn").style.display = "inline-block";
+            renderTitles(titles);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+
+        function backToCatalog() {
+            document.getElementById("status").textContent = "";
+            loadTitles();
+        }
+
+        function renderTitles(titles) {
+            const grid = document.getElementById("grid");
+            grid.innerHTML = "";
+            titles.forEach(title => {
+                const genres = title.genres.map(g =>
+                    `<span class="genre-tag">${g.name}</span>`
+                ).join("");
+                const card = document.createElement("div");
+                card.className = "card";
+                card.innerHTML = `
+                    <h3>${title.name}</h3>
+                    <div class="meta">${title.media_type || ""} ${title.year || ""}${title.country ? " · " + title.country : ""}</div>
+                    <div class="genres">${genres}</div>
+                    ${title.director ? `<div class="director">Режиссёр: ${title.director}</div>` : ""}
+                    ${title.description ? `<div class="description">${title.description}</div>` : ""}
+                    <button onclick="loadRecommendations(${title.id})">Похожее</button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        loadTitles();
+    </script>
+</body>
+</html>

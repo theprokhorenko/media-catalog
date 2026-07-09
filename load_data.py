@@ -1,8 +1,19 @@
 import pandas as pd
 from database import SessionLocal
 import models
+import os
 
-df = pd.read_csv("netflix_titles.csv")
+CSV_FILE = "netflix_titles.csv"
+
+if not os.path.exists(CSV_FILE):
+    print(
+        f"Файл {CSV_FILE} не найден.\n"
+        "Скачайте датасет: https://www.kaggle.com/datasets/shivamb/netflix-shows\n"
+        "и положите netflix_titles.csv в корень проекта."
+    )
+    exit()
+
+df = pd.read_csv(CSV_FILE)
 db = SessionLocal()
 
 genre_cache = {}

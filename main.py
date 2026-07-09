@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from database import get_db
 import models, schemas
@@ -9,6 +10,12 @@ app = FastAPI()
 @app.get("/")
 def read_root():
     return {"status": "ok"}
+
+
+@app.get("/app", response_class=HTMLResponse)
+def serve_app():
+    with open("static/index.html", encoding="utf-8") as f:
+        return f.read()
 
 
 @app.post("/genres", response_model=schemas.GenreRead)
